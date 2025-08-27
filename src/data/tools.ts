@@ -24,9 +24,9 @@ export interface HealthTool {
 
 export const categories = [
   "All",
-  "Heart Health", 
+  "Heart Health",
   "Mental Health",
-  "Metabolic Health",
+  "Metabolic Health", 
   "Respiratory",
   "Digestive",
   "General Health",
@@ -38,7 +38,7 @@ export const categories = [
 export const healthTools: HealthTool[] = [
   {
     id: "anxiety-checker",
-    title: "Anxiety Assessment",
+    title: "Anxiety Assessment", 
     description: "Comprehensive evaluation of anxiety symptoms and their impact on daily life",
     category: "Mental Health",
     difficulty: "Easy",
@@ -129,9 +129,9 @@ export const healthTools: HealthTool[] = [
   },
   {
     id: "asthma-checker",
-    title: "Asthma Symptom Checker", 
+    title: "Asthma Symptom Checker",
     description: "Comprehensive assessment of respiratory symptoms that might indicate asthma or breathing difficulties",
-    category: "Respiratory",
+    category: "Respiratory", 
     difficulty: "Easy",
     estimatedTime: "6-8 min",
     icon: "🫁",
@@ -218,7 +218,6 @@ export const healthTools: HealthTool[] = [
       }
     ]
   }
-  // Add more tools following this pattern...
 ];
 
 export const getToolById = (id: string): HealthTool | undefined => {
