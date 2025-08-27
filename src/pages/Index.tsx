@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, Stethoscope, Users, Award, ChevronRight } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,60 +25,25 @@ const Index = () => {
     navigate(`/quiz/${toolId}`);
   };
 
-  const stats = [
-    { icon: Stethoscope, label: "Health Tools", value: "15+" },
-    { icon: Users, label: "Users Helped", value: "10K+" },
-    { icon: Award, label: "Accuracy Rate", value: "95%" },
-  ];
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
       
-      {/* Hero Section */}
-      <section className="relative py-20 px-4">
+      {/* Compact Header - Much Smaller */}
+      <section className="pt-24 pb-8 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-6">
-            <Stethoscope className="w-4 h-4 mr-2" />
-            AI-Powered Health Assessments
-          </div>
-          
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Your Health,
-            <span className="text-primary"> Analyzed Instantly</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Health Assessment Tools
           </h1>
-          
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Get instant, accurate health assessments with our AI-powered symptom checkers and diagnostic tools
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Choose from our comprehensive collection of symptom checkers and health assessments
           </p>
-
-          {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-8 mb-12">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-2 mx-auto">
-                  <stat.icon className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
       {/* Tools Section */}
-      <section className="py-20 px-4">
+      <section className="py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Health Assessment Tools
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Choose from our comprehensive collection of symptom checkers and health assessments
-            </p>
-          </div>
-
           {/* Search and Filter */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="relative flex-1">
@@ -138,16 +103,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-primary text-primary-foreground">
+      {/* Simple CTA Section - Much Smaller */}
+      <section className="py-12 px-4 bg-primary/5">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
             Ready to Take Control of Your Health?
           </h2>
-          <p className="text-xl mb-8 opacity-90">
+          <p className="text-lg mb-6 text-muted-foreground">
             Join thousands of users who trust FitScan for their health assessments
           </p>
-          <Button size="lg" variant="secondary" className="text-primary">
+          <Button size="lg" className="text-primary-foreground">
             Get Started Today
             <ChevronRight className="ml-2 h-5 w-5" />
           </Button>
