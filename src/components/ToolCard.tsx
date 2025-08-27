@@ -47,30 +47,29 @@ function pickIcon(toolId: string, category: string) {
     case "diabetes-checker":
       return Thermometer;
     case "asthma-checker":
-      return Wind; // Changed from Lungs to Wind
+      return Wind;
     case "ibs-checker":
     case "food-poisoning-checker":
     case "gastroenteritis-checker":
-      return Sandwich; // stomach/food metaphor
+      return Sandwich;
     case "covid-checker":
       return Shield;
     case "anemia-checker":
       return Droplets;
     case "pcos-checker":
-      return Bone; // placeholder; replace with more suitable if desired
+      return Bone;
     case "dizziness-checker":
       return Zap;
     case "uti-checker":
       return Droplets;
     default:
-      // category fallback
       switch (category) {
         case "Heart Health":
           return Heart;
         case "Mental Health":
           return Brain;
         case "Respiratory":
-          return Wind; // Changed from Lungs to Wind
+          return Wind;
         case "Digestive":
           return Sandwich;
         case "Metabolic Health":
