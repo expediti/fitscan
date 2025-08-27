@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { Home, Share2, Download, RotateCcw, Activity } from "lucide-react";
+import { Home, Download, RotateCcw, Activity, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,12 +25,10 @@ export default function ResultsPage() {
     const state = location.state as LocationState;
     
     if (state && state.tool && state.answers) {
-      // Use state from navigation
       setTool(state.tool);
       setScore(state.score);
       setAnswers(state.answers);
     } else if (toolId) {
-      // Fallback - get tool by ID
       const foundTool = getToolById(toolId);
       if (foundTool) {
         setTool(foundTool);
@@ -62,28 +60,41 @@ export default function ResultsPage() {
   const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
   
   const getRiskLevel = (percentage: number) => {
-    if (percentage >= 70) return { level: "High", color: "text-red-600 bg-red-50", description: "Significant symptoms detected" };
-    if (percentage >= 40) return { level: "Moderate", color: "text-yellow-600 bg-yellow-50", description: "Some concerning symptoms" };
-    return { level: "Low", color: "text-green-600 bg-green-50", description: "Few or mild symptoms" };
+    if (percentage >= 70) return "high";
+    if (percentage >= 40) return "moderate"; 
+    return "low";
   };
 
-  const risk = getRiskLevel(percentage);
-
-  const getRecommendations = () => {
-    if (percentage >= 70) {
-      return "We strongly recommend consulting with a healthcare professional soon for a proper evaluation.";
-    } else if (percentage >= 40) {
-      return "Consider discussing these symptoms with your healthcare provider if they persist.";
-    }
-    return "Continue monitoring your health and maintain healthy lifestyle choices.";
+  const getRiskLevelDisplay = (level: string) => {
+    const displays = {
+      high: { 
+        level: "High", 
+        color: "text-red-600 bg-red-50 border-red-200", 
+        icon: AlertCircle,
+        description: "Significant symptoms detected" 
+      },
+      moderate: { 
+        level: "Moderate", 
+        color: "text-yellow-600 bg-yellow-50 border-yellow-200", 
+        icon: AlertTriangle,
+        description: "Some concerning symptoms" 
+      },
+      low: { 
+        level: "Low", 
+        color: "text-green-600 bg-green-50 border-green-200", 
+        icon: CheckCircle,
+        description: "Few or mild symptoms" 
+      }
+    };
+    return displays[level as keyof typeof displays] || displays.low;
   };
+
+  const riskLevel = getRiskLevel(percentage);
+  const riskDisplay = getRiskLevelDisplay(riskLevel);
+  const recommendations = tool.recommendations?.[riskLevel as keyof typeof tool.recommendations];
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleTakeAnother = () => {
-    navigate("/");
   };
 
   const handleRetake = () => {
@@ -94,7 +105,6 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
       
-      {/* Print-friendly header */}
       <div className="pt-20 px-4 print:pt-4">
         <div className="max-w-4xl mx-auto">
           {/* Navigation Header */}
@@ -117,13 +127,14 @@ export default function ResultsPage() {
 
           {/* Results Header */}
           <div className="text-center mb-8">
-            <Badge className={`${risk.color} px-4 py-2 text-sm font-medium mb-4`}>
-              {risk.level} Risk Level
+            <Badge className={`${riskDisplay.color} border px-4 py-2 text-sm font-medium mb-4`}>
+              <riskDisplay.icon className="h-4 w-4 mr-2" />
+              {riskDisplay.level} Risk Level
             </Badge>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
               {tool.title} Results
             </h1>
-            <p className="text-muted-foreground">{risk.description}</p>
+            <p className="text-muted-foreground">{riskDisplay.description}</p>
           </div>
 
           {/* Score Card */}
@@ -139,43 +150,47 @@ export default function ResultsPage() {
               <div className="text-lg text-muted-foreground mb-2">
                 {percentage}% of maximum score
               </div>
-              <div className={`inline-block px-4 py-2 rounded-full ${risk.color} font-medium`}>
-                <Activity className="h-4 w-4 inline mr-2" />
-                {risk.level} Risk
+              <div className={`inline-flex items-center px-4 py-2 rounded-full border ${riskDisplay.color} font-medium`}>
+                <Activity className="h-4 w-4 mr-2" />
+                {riskDisplay.level} Risk
               </div>
             </CardContent>
           </Card>
 
-          {/* Recommendations */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Recommendations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-foreground leading-relaxed mb-4">
-                {getRecommendations()}
-              </p>
-              
-              {percentage >= 40 && (
-                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
-                  <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">
-                    Next Steps:
-                  </h4>
-                  <ul className="text-amber-700 dark:text-amber-400 text-sm space-y-1">
-                    <li>• Keep track of your symptoms</li>
-                    <li>• Note any changes or worsening</li>
-                    <li>• Schedule a consultation with your doctor</li>
-                    <li>• Bring these results to your appointment</li>
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Tool-Specific Recommendations */}
+          {recommendations && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <riskDisplay.icon className="h-5 w-5" />
+                  {recommendations.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-foreground leading-relaxed mb-6">
+                  {recommendations.advice}
+                </p>
+                
+                <h4 className="font-semibold text-foreground mb-4">Recommended Actions:</h4>
+                <ul className="space-y-3">
+                  {recommendations.suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                      <span className="text-sm text-foreground leading-relaxed">{suggestion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Disclaimer */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-red-600">Important Disclaimer</CardTitle>
+              <CardTitle className="text-red-600 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Important Disclaimer
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -189,7 +204,7 @@ export default function ResultsPage() {
           {/* Actions */}
           <div className="text-center pb-8 print:hidden">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={handleTakeAnother}>
+              <Button size="lg" onClick={() => navigate("/")}>
                 Take Another Assessment
               </Button>
               <Button size="lg" variant="outline" onClick={handleRetake}>
