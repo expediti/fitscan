@@ -29,8 +29,8 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
 
   // Precompute max possible score for percentage
   const maxScore = useMemo(() => {
-    return questions.reduce((sum, q) => {
-      const maxVal = Math.max(...q.options.map((o) => Number(o.value) || 0));
+    return questions.reduce((sum, question) => {
+      const maxVal = Math.max(...question.options.map(o => Number(o.value) || 0));
       return sum + maxVal;
     }, 0);
   }, [questions]);
@@ -42,6 +42,7 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!q) return;
+
       // 1..6 select options
       if (e.key >= "1" && e.key <= "6") {
         const idx = Number(e.key) - 1;
@@ -70,6 +71,7 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
     if (!q) return answers;
     const newAnswers = { ...answers, [q.id]: selected };
     setAnswers(newAnswers);
+
     if (typeof nextIndex === "number") {
       // Prefill selected for the next question if previously answered
       const nq = questions[nextIndex];
@@ -84,7 +86,7 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
   const computeTotalScore = (map: AnswerMap) => {
     return questions.reduce((sum, qu) => {
       const ans = map[qu.id];
-      const opt = qu.options.find((o) => o.id === ans);
+      const opt = qu.options.find(o => o.id === ans);
       return sum + (Number(opt?.value) || 0);
     }, 0);
   };
@@ -122,9 +124,7 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {tool.category}
-            </Badge>
+            <Badge variant="secondary" className="text-xs">{tool.category}</Badge>
             <span className="text-sm text-muted-foreground">|</span>
             <span className="text-sm text-muted-foreground">
               Question {current + 1} of {total}
@@ -150,7 +150,8 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
 
         {/* Question */}
         <div className="p-4">
-          <h3 className="text-lg font-semibold mb-3">{q?.question}</h3>
+          <h3 className="text-lg font-semibold mb-3">{q?.text}</h3>
+
           <div className="grid gap-2">
             {q?.options.map((opt: Option, idx: number) => {
               const active = selected === opt.id;
@@ -162,14 +163,14 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
                     "w-full text-left rounded-md border p-3 transition",
                     active
                       ? "border-primary/60 bg-primary/5 ring-2 ring-primary/30"
-                      : "hover:bg-muted",
+                      : "hover:bg-muted"
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-2">
                     <div
                       className={[
                         "h-4 w-4 rounded-full border flex items-center justify-center",
-                        active ? "border-primary" : "border-muted-foreground/30",
+                        active ? "border-primary" : "border-muted-foreground/30"
                       ].join(" ")}
                     >
                       {active && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
@@ -199,10 +200,16 @@ export default function QuizModal({ tool, onClose, onComplete }: QuizModalProps)
             <ArrowLeft className="h-4 w-4" />
             Previous
           </Button>
+
           <div className="text-sm text-muted-foreground">
             {current + 1} / {total}
           </div>
-          <Button onClick={handleNext} disabled={!canNext} className="gap-1">
+
+          <Button
+            onClick={handleNext}
+            disabled={!canNext}
+            className="gap-1"
+          >
             {isLast ? (
               <>
                 <CheckCircle2 className="h-4 w-4" />
