@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { Home, Download, RotateCcw, Activity, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
+import { Home, Download, RotateCcw, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 import Navigation from "@/components/Navigation";
 import { getToolById, HealthTool } from "@/data/tools";
 
@@ -12,6 +14,75 @@ interface LocationState {
   score: number;
   tool: HealthTool;
 }
+
+// Circular Risk Component
+const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; riskLevel: string }) => {
+  const getRiskConfig = (level: string) => {
+    const configs = {
+      high: { 
+        color: '#dc2626', 
+        bgColor: '#fef2f2',
+        icon: AlertCircle,
+        label: 'HIGH RISK'
+      },
+      moderate: { 
+        color: '#d97706', 
+        bgColor: '#fffbeb',
+        icon: AlertTriangle,
+        label: 'MODERATE'
+      },
+      low: { 
+        color: '#16a34a', 
+        bgColor: '#f0fdf4',
+        icon: CheckCircle,
+        label: 'LOW RISK'
+      }
+    };
+    return configs[level as keyof typeof configs] || configs.low;
+  };
+
+  const config = getRiskConfig(riskLevel);
+  const Icon = config.icon;
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative">
+        <div style={{ width: 160, height: 160 }}>
+          <CircularProgressbar
+            value={percentage}
+            strokeWidth={12}
+            styles={buildStyles({
+              pathColor: config.color,
+              trailColor: '#e5e7eb',
+              strokeLinecap: 'round',
+              pathTransitionDuration: 1.5,
+            })}
+          />
+        </div>
+        
+        {/* Center Content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <Icon className="h-8 w-8 mb-2" style={{ color: config.color }} />
+          <div className="text-2xl font-bold" style={{ color: config.color }}>
+            {percentage}%
+          </div>
+        </div>
+      </div>
+      
+      {/* Risk Label */}
+      <div 
+        className="px-4 py-2 rounded-full text-sm font-semibold"
+        style={{ 
+          backgroundColor: config.bgColor, 
+          color: config.color,
+          border: `2px solid ${config.color}40`
+        }}
+      >
+        {config.label}
+      </div>
+    </div>
+  );
+};
 
 export default function ResultsPage() {
   const { toolId } = useParams<{ toolId: string }>();
@@ -69,20 +140,14 @@ export default function ResultsPage() {
     const displays = {
       high: { 
         level: "High", 
-        color: "text-red-600 bg-red-50 border-red-200", 
-        icon: AlertCircle,
         description: "Significant symptoms detected" 
       },
       moderate: { 
         level: "Moderate", 
-        color: "text-yellow-600 bg-yellow-50 border-yellow-200", 
-        icon: AlertTriangle,
         description: "Some concerning symptoms" 
       },
       low: { 
         level: "Low", 
-        color: "text-green-600 bg-green-50 border-green-200", 
-        icon: CheckCircle,
         description: "Few or mild symptoms" 
       }
     };
@@ -127,32 +192,25 @@ export default function ResultsPage() {
 
           {/* Results Header */}
           <div className="text-center mb-8">
-            <Badge className={`${riskDisplay.color} border px-4 py-2 text-sm font-medium mb-4`}>
-              <riskDisplay.icon className="h-4 w-4 mr-2" />
-              {riskDisplay.level} Risk Level
-            </Badge>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
               {tool.title} Results
             </h1>
             <p className="text-muted-foreground">{riskDisplay.description}</p>
           </div>
 
-          {/* Score Card */}
+          {/* Circular Risk Display */}
           <Card className="mb-8">
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Your Assessment Score</CardTitle>
+              <CardTitle className="text-xl">Your Assessment Results</CardTitle>
             </CardHeader>
-            <CardContent className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <div className="text-6xl font-bold text-primary mr-2">{score}</div>
-                <div className="text-2xl text-muted-foreground">/ {maxScore}</div>
-              </div>
-              <div className="text-lg text-muted-foreground mb-2">
-                {percentage}% of maximum score
-              </div>
-              <div className={`inline-flex items-center px-4 py-2 rounded-full border ${riskDisplay.color} font-medium`}>
-                <Activity className="h-4 w-4 mr-2" />
-                {riskDisplay.level} Risk
+            <CardContent className="flex justify-center py-8">
+              <CircularRiskIndicator percentage={percentage} riskLevel={riskLevel} />
+            </CardContent>
+            <CardContent className="text-center pt-0">
+              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+                <span>Score: {score} / {maxScore}</span>
+                <span>•</span>
+                <span>Assessment: {tool.title}</span>
               </div>
             </CardContent>
           </Card>
@@ -162,7 +220,9 @@ export default function ResultsPage() {
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <riskDisplay.icon className="h-5 w-5" />
+                  {riskLevel === 'high' && <AlertCircle className="h-5 w-5 text-red-600" />}
+                  {riskLevel === 'moderate' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
+                  {riskLevel === 'low' && <CheckCircle className="h-5 w-5 text-green-600" />}
                   {recommendations.title}
                 </CardTitle>
               </CardHeader>
