@@ -1,68 +1,54 @@
-import { useState } from 'react';
-import ToolCard from '@/components/ToolCard';
-import QuizModal from '@/components/QuizModal';
-import { healthTools, getToolById, type HealthTool } from '@/data/tools';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Blog from "./pages/Blog";
+import About from "./pages/About";
+import NotFound from "./pages/NotFound";
+import ToolPage from "./pages/ToolPage";
 
-function App() {
-  const [selectedTool, setSelectedTool] = useState<HealthTool | null>(null);
-  const [showQuiz, setShowQuiz] = useState(false);
+const queryClient = new QueryClient();
 
-  const handleStartTool = (toolId: string) => {
-    const tool = getToolById(toolId);
-    if (tool) {
-      setSelectedTool(tool);
-      setShowQuiz(true);
-    }
-  };
-
-  const handleCloseQuiz = () => {
-    setShowQuiz(false);
-    setSelectedTool(null);
-  };
-
-  const handleQuizComplete = (score: number, answers: Record<string, string>) => {
-    console.log('Quiz completed:', { score, answers });
-    // Handle completion logic here
-    setShowQuiz(false);
-    setSelectedTool(null);
-  };
-
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">FitScan Health Assessment</h1>
-          <p className="text-lg text-muted-foreground">
-            Choose from our range of specialized health checkers
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {healthTools.map((tool) => (
-            <ToolCard
-              key={tool.id}
-              id={tool.id}
-              title={tool.title}
-              description={tool.description}
-              category={tool.category}
-              difficulty={tool.difficulty}
-              estimatedTime={tool.estimatedTime}
-              icon={tool.icon}
-              onStartTool={handleStartTool}
-            />
-          ))}
-        </div>
-
-        {showQuiz && selectedTool && (
-          <QuizModal
-            tool={selectedTool}
-            onClose={handleCloseQuiz}
-            onComplete={handleQuizComplete}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/about" element={<About />} />
+            
+            {/* Individual routes for each health tool */}
+            <Route path="/anemia-checker" element={<ToolPage />} />
+            <Route path="/diabetes-checker" element={<ToolPage />} />
+            <Route path="/pcos-checker" element={<ToolPage />} />
+            <Route path="/asthma-checker" element={<ToolPage />} />
+            <Route path="/depression-checker" element={<ToolPage />} />
+            <Route path="/anxiety-checker" element={<ToolPage />} />
+            <Route path="/ibs-checker" element={<ToolPage />} />
+            <Route path="/covid-checker" element={<ToolPage />} />
+            <Route path="/food-poisoning-checker" element={<ToolPage />} />
+            <Route path="/gastroenteritis-checker" element={<ToolPage />} />
+            <Route path="/heart-disease-checker" element={<ToolPage />} />
+            <Route path="/heart-attack-checker" element={<ToolPage />} />
+            <Route path="/arthritis-checker" element={<ToolPage />} />
+            <Route path="/dizziness-checker" element={<ToolPage />} />
+            <Route path="/uti-checker" element={<ToolPage />} />
+            
+            {/* Fallback route for any other tool slugs */}
+            <Route path="/:toolSlug" element={<ToolPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;
