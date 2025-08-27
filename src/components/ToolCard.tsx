@@ -4,7 +4,7 @@ import {
   Heart,
   Brain,
   Activity,
-  Lungs,
+  Wind,
   Sandwich,
   Shield,
   Thermometer,
@@ -12,6 +12,7 @@ import {
   Zap,
   Droplets,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,7 +47,7 @@ function pickIcon(toolId: string, category: string) {
     case "diabetes-checker":
       return Thermometer;
     case "asthma-checker":
-      return Lungs;
+      return Wind; // Changed from Lungs to Wind
     case "ibs-checker":
     case "food-poisoning-checker":
     case "gastroenteritis-checker":
@@ -69,7 +70,7 @@ function pickIcon(toolId: string, category: string) {
         case "Mental Health":
           return Brain;
         case "Respiratory":
-          return Lungs;
+          return Wind; // Changed from Lungs to Wind
         case "Digestive":
           return Sandwich;
         case "Metabolic Health":
@@ -89,7 +90,7 @@ function pickIcon(toolId: string, category: string) {
 export default function ToolCard(props: ToolCardProps) {
   const { id, title, description, category, difficulty, estimatedTime, onStartTool } = props;
   const Icon = pickIcon(id, category);
-  const diffStyle = `border ${difficultyStyles[difficulty] ?? "bg-gray-100 text-gray-700 border-gray-200"}`;
+  const diffStyle = difficultyStyles[difficulty] ?? "bg-gray-100 text-gray-700 border-gray-200";
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -109,13 +110,16 @@ export default function ToolCard(props: ToolCardProps) {
               <p className="text-xs text-muted-foreground">{category}</p>
             </div>
           </div>
-          <Badge className={diffStyle}>{difficulty}</Badge>
+          <Badge className={`border ${diffStyle}`}>{difficulty}</Badge>
         </div>
+
         <p className="text-sm text-muted-foreground">{description}</p>
+
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="h-4 w-4" />
           <span>{estimatedTime}</span>
         </div>
+
         <div className="mt-2 flex justify-end">
           <Button onClick={handleClick} className="gap-2">
             Start Assessment
