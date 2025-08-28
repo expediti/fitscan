@@ -13,7 +13,15 @@ interface LocationState {
   tool: HealthTool;
 }
 
-// Custom Circular Progress Component (No Package Needed)
+interface PatientInfo {
+  name: string;
+  age: string;
+  sex: string;
+  contactNumber: string;
+  dateOfBirth: string;
+}
+
+// Custom Circular Progress Component
 const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; riskLevel: string }) => {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
@@ -51,23 +59,17 @@ const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; 
   const config = getRiskConfig(riskLevel);
   const Icon = config.icon;
   
-  const radius = 70;
-  const strokeWidth = 8;
+  const radius = 60;
+  const strokeWidth = 6;
   const normalizedRadius = radius - strokeWidth * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDasharray = `${circumference} ${circumference}`;
   const strokeDashoffset = circumference - (animatedPercentage / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-6 print:gap-4">
-      <div className="relative print:scale-75">
-        {/* SVG Circular Progress */}
-        <svg
-          height={radius * 2}
-          width={radius * 2}
-          className="transform -rotate-90"
-        >
-          {/* Background Circle */}
+    <div className="flex items-center gap-4 print:scale-75">
+      <div className="relative">
+        <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
           <circle
             stroke="#e5e7eb"
             fill="transparent"
@@ -76,7 +78,6 @@ const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; 
             cx={radius}
             cy={radius}
           />
-          {/* Progress Circle */}
           <circle
             stroke={config.color}
             fill="transparent"
@@ -92,26 +93,16 @@ const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; 
             cy={radius}
           />
         </svg>
-        
-        {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Icon className="h-8 w-8 mb-2 print:h-6 print:w-6" style={{ color: config.color }} />
-          <div className="text-2xl font-bold print:text-xl" style={{ color: config.color }}>
+          <Icon className="h-6 w-6 mb-1" style={{ color: config.color }} />
+          <div className="text-lg font-bold" style={{ color: config.color }}>
             {percentage}%
           </div>
         </div>
       </div>
-      
-      {/* Risk Label */}
-      <div 
-        className="px-6 py-3 rounded-full text-sm font-bold tracking-wide print:px-4 print:py-2 print:text-xs"
-        style={{ 
-          backgroundColor: config.bgColor, 
-          color: config.color,
-          border: `2px solid ${config.color}40`
-        }}
-      >
-        {config.label}
+      <div>
+        <div className="text-sm font-semibold">{config.label}</div>
+        <div className="text-xs text-gray-600">Risk Assessment</div>
       </div>
     </div>
   );
@@ -124,6 +115,7 @@ export default function ResultsPage() {
   const [tool, setTool] = useState<HealthTool | null>(null);
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
 
   useEffect(() => {
     const state = location.state as LocationState;
@@ -169,30 +161,31 @@ export default function ResultsPage() {
     return "low";
   };
 
-  const getRiskLevelDisplay = (level: string) => {
-    const displays = {
-      high: { 
-        level: "High", 
-        description: "Significant symptoms detected" 
-      },
-      moderate: { 
-        level: "Moderate", 
-        description: "Some concerning symptoms" 
-      },
-      low: { 
-        level: "Low", 
-        description: "Few or mild symptoms" 
-      }
-    };
-    return displays[level as keyof typeof displays] || displays.low;
-  };
-
   const riskLevel = getRiskLevel(percentage);
-  const riskDisplay = getRiskLevelDisplay(riskLevel);
   const recommendations = tool.recommendations?.[riskLevel as keyof typeof tool.recommendations];
 
+  const promptPatientInfo = (): PatientInfo => {
+    const name = window.prompt("Enter Patient's Full Name:", "") || "Not Provided";
+    const age = window.prompt("Enter Patient's Age:", "") || "Not Provided";
+    const sex = window.prompt("Enter Patient's Sex (Male/Female/Other):", "") || "Not Provided";
+    const contactNumber = window.prompt("Enter Patient's Contact Number:", "") || "Not Provided";
+    const dateOfBirth = window.prompt("Enter Patient's Date of Birth (DD/MM/YYYY):", "") || "Not Provided";
+    
+    return { name, age, sex, contactNumber, dateOfBirth };
+  };
+
   const handlePrint = () => {
-    window.print();
+    if (!patientInfo) {
+      const info = promptPatientInfo();
+      setPatientInfo(info);
+      
+      // Wait for state update then print
+      setTimeout(() => {
+        window.print();
+      }, 100);
+    } else {
+      window.print();
+    }
   };
 
   const handleRetake = () => {
@@ -200,210 +193,172 @@ export default function ResultsPage() {
   };
 
   const currentDate = new Date();
+  const reportId = Math.random().toString(36).substr(2, 9).toUpperCase();
+
+  // Get answered questions details
+  const answeredQuestions = tool.questions.map(q => {
+    const answerId = answers[q.id];
+    const selectedOption = q.options.find(opt => opt.id === answerId);
+    return {
+      question: q.text,
+      answer: selectedOption?.text || "Not answered",
+      score: selectedOption?.value || 0
+    };
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ENHANCED PRINT STYLES - FORCES WHITE BACKGROUND IN ALL MODES */}
+      {/* PROFESSIONAL DENSE PRINT STYLES */}
       <style>{`
         @media print {
-          /* Force white background and black text - override all themes */
-          *, *:before, *:after {
-            background: white !important;
-            color: black !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
+          * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
           
-          /* Root and body override */
-          html, body {
+          body {
+            margin: 0 !important;
+            padding: 15mm !important;
             background: white !important;
             color: black !important;
-            margin: 0 !important;
-            padding: 2cm !important;
-            font-family: "Times New Roman", serif !important;
-            font-size: 12pt !important;
-            line-height: 1.6 !important;
+            font-family: "Arial", sans-serif !important;
+            font-size: 10pt !important;
+            line-height: 1.3 !important;
           }
           
-          /* Hide non-print elements */
           .no-print {
             display: none !important;
           }
           
-          /* Print header styling */
-          .print-header {
-            display: block !important;
-            margin-bottom: 2rem !important;
-            padding-bottom: 1rem !important;
-            border-bottom: 3px solid #2563eb !important;
+          .print-container {
             background: white !important;
+            color: black !important;
+          }
+          
+          .print-header {
+            background: #2563eb !important;
+            color: white !important;
+            padding: 15px !important;
+            margin-bottom: 10px !important;
+            border-radius: 5px !important;
           }
           
           .print-title {
-            font-size: 24pt !important;
+            font-size: 18pt !important;
             font-weight: bold !important;
-            color: #1e40af !important;
-            margin-bottom: 0.5rem !important;
-            text-align: center !important;
-            background: white !important;
+            margin-bottom: 5px !important;
           }
           
           .print-subtitle {
-            font-size: 14pt !important;
-            color: #6b7280 !important;
-            text-align: center !important;
-            background: white !important;
+            font-size: 11pt !important;
+            opacity: 0.9 !important;
           }
           
-          .print-date {
-            font-size: 10pt !important;
-            color: #6b7280 !important;
-            text-align: right !important;
-            margin-top: 1rem !important;
-            background: white !important;
+          .info-section {
+            background: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+            padding: 8px !important;
+            margin-bottom: 8px !important;
+            border-radius: 3px !important;
           }
           
-          /* Card styling */
-          .print-card {
-            background: white !important;
-            border: 1px solid #d1d5db !important;
-            border-radius: 8px !important;
-            margin-bottom: 1.5rem !important;
-            padding: 1.5rem !important;
-            break-inside: avoid !important;
-            box-shadow: none !important;
+          .info-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            font-size: 9pt !important;
           }
           
-          .print-card-title {
-            font-size: 16pt !important;
+          .info-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            padding: 2px 0 !important;
+            border-bottom: 1px dotted #ccc !important;
+          }
+          
+          .section-title {
+            font-size: 12pt !important;
             font-weight: bold !important;
-            color: #1f2937 !important;
-            margin-bottom: 1rem !important;
-            padding-bottom: 0.5rem !important;
-            border-bottom: 1px solid #e5e7eb !important;
-            background: white !important;
-          }
-          
-          /* Risk colors - preserve these */
-          .risk-high { color: #dc2626 !important; }
-          .risk-moderate { color: #d97706 !important; }
-          .risk-low { color: #16a34a !important; }
-          
-          /* Risk backgrounds */
-          .risk-bg-high { 
-            background: #fef2f2 !important; 
-            border: 2px solid #dc2626 !important;
-          }
-          .risk-bg-moderate { 
-            background: #fffbeb !important; 
-            border: 2px solid #d97706 !important;
-          }
-          .risk-bg-low { 
-            background: #f0fdf4 !important; 
-            border: 2px solid #16a34a !important;
-          }
-          
-          /* Recommendations list */
-          .recommendations-list {
-            list-style: none !important;
-            padding-left: 0 !important;
-            background: white !important;
-          }
-          
-          .recommendations-list li {
-            margin-bottom: 0.75rem !important;
-            padding-left: 1.5rem !important;
-            position: relative !important;
-            background: white !important;
-            color: black !important;
-          }
-          
-          .recommendations-list li::before {
-            content: "•" !important;
             color: #2563eb !important;
-            font-weight: bold !important;
+            margin: 10px 0 5px 0 !important;
+            padding-bottom: 3px !important;
+            border-bottom: 2px solid #2563eb !important;
+          }
+          
+          .question-item {
+            background: #f8f9fa !important;
+            border-left: 3px solid #2563eb !important;
+            padding: 6px !important;
+            margin-bottom: 4px !important;
+            font-size: 9pt !important;
+          }
+          
+          .risk-display {
+            text-align: center !important;
+            background: #e9ecef !important;
+            border: 2px solid #2563eb !important;
+            padding: 15px !important;
+            margin: 10px 0 !important;
+            border-radius: 5px !important;
+          }
+          
+          .recommendations-section {
+            background: #fff3cd !important;
+            border: 1px solid #ffc107 !important;
+            padding: 10px !important;
+            margin: 8px 0 !important;
+            border-radius: 3px !important;
+          }
+          
+          .recommendation-item {
+            font-size: 9pt !important;
+            margin-bottom: 3px !important;
+            padding-left: 15px !important;
+            position: relative !important;
+          }
+          
+          .recommendation-item::before {
+            content: "•" !important;
             position: absolute !important;
             left: 0 !important;
+            color: #2563eb !important;
           }
           
-          /* Risk score section */
-          .risk-score {
+          .disclaimer-box {
+            background: #f8d7da !important;
+            border: 1px solid #dc3545 !important;
+            padding: 8px !important;
+            margin: 8px 0 !important;
+            border-radius: 3px !important;
+            font-size: 8pt !important;
+            line-height: 1.2 !important;
+          }
+          
+          .footer {
+            margin-top: 15px !important;
+            padding-top: 10px !important;
+            border-top: 2px solid #2563eb !important;
+            font-size: 8pt !important;
             text-align: center !important;
-            padding: 2rem !important;
-            background: #f9fafb !important;
-            border-radius: 8px !important;
-            border: 2px solid #e5e7eb !important;
+            color: #666 !important;
           }
           
-          /* Disclaimer box */
-          .disclaimer {
-            background: #fef3cd !important;
-            border: 1px solid #fbbf24 !important;
-            border-radius: 8px !important;
-            padding: 1rem !important;
-            font-size: 11pt !important;
-            line-height: 1.4 !important;
-            color: black !important;
-          }
-          
-          /* Footer */
-          .print-footer {
-            display: block !important;
-            margin-top: 3rem !important;
-            padding-top: 1rem !important;
-            border-top: 1px solid #d1d5db !important;
-            font-size: 10pt !important;
-            color: #6b7280 !important;
-            text-align: center !important;
-            background: white !important;
-          }
-          
-          /* SVG elements */
-          svg circle {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          
-          /* Page setup */
           @page {
             size: A4 !important;
-            margin: 2cm !important;
-            background: white !important;
-          }
-          
-          /* Headers */
-          h1, h2, h3, h4, h5, h6 {
-            color: black !important;
-            background: white !important;
-          }
-          
-          /* Specific overrides for common dark theme classes */
-          .dark *, .bg-background, .text-foreground, .bg-card, .text-card-foreground {
-            background: white !important;
-            color: black !important;
+            margin: 15mm !important;
           }
         }
       `}</style>
       
       <Navigation className="no-print" />
       
-      <div className="pt-20 px-4 print:pt-0 print:px-0">
-        {/* Print Header - Only visible when printing */}
+      <div className="pt-20 px-4 print:pt-0 print:px-0 print-container">
+        {/* Print Header */}
         <div className="hidden print:block print-header">
-          <div className="print-title">FitScan Health Assessment Report</div>
-          <div className="print-subtitle">Professional Health Screening Results</div>
-          <div className="print-date">
-            Generated: {currentDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
+          <div className="print-title">Medical Report - {tool.title}</div>
+          <div className="print-subtitle">
+            FitScan Health Assessment Platform • Report ID: {reportId} • Generated: {currentDate.toLocaleString()}
           </div>
         </div>
 
@@ -426,108 +381,186 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          {/* Results Header */}
-          <div className="text-center mb-8 print:mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 print:text-2xl print:mb-4">
-              {tool.title} Results
-            </h1>
-            <p className="text-muted-foreground">{riskDisplay.description}</p>
-          </div>
-
-          {/* Patient Information Card - Print Only */}
-          <div className="hidden print:block print-card">
-            <div className="print-card-title">Assessment Information</div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><strong>Assessment Type:</strong> {tool.title}</div>
-              <div><strong>Category:</strong> {tool.category}</div>
-              <div><strong>Difficulty Level:</strong> {tool.difficulty}</div>
-              <div><strong>Estimated Time:</strong> {tool.estimatedTime}</div>
-              <div><strong>Total Questions:</strong> {tool.questions.length}</div>
-              <div><strong>Assessment Date:</strong> {currentDate.toLocaleDateString()}</div>
+          {/* Patient Information - Print Only */}
+          {patientInfo && (
+            <div className="hidden print:block info-section">
+              <div className="section-title">Patient Information</div>
+              <div className="info-grid">
+                <div className="info-row"><strong>Name:</strong> {patientInfo.name}</div>
+                <div className="info-row"><strong>Patient ID:</strong> {reportId}</div>
+                <div className="info-row"><strong>Date of Birth:</strong> {patientInfo.dateOfBirth}</div>
+                <div className="info-row"><strong>Date of Report:</strong> {currentDate.toLocaleDateString()}</div>
+                <div className="info-row"><strong>Age:</strong> {patientInfo.age}</div>
+                <div className="info-row"><strong>Referring Physician:</strong> Self-Assessment</div>
+                <div className="info-row"><strong>Sex:</strong> {patientInfo.sex}</div>
+                <div className="info-row"><strong>Specialty:</strong> {tool.category}</div>
+                <div className="info-row"><strong>Contact:</strong> {patientInfo.contactNumber}</div>
+                <div className="info-row"><strong>Contact Information:</strong> hollyman2313@gmail.com</div>
+              </div>
             </div>
+          )}
+
+          {/* Assessment Introduction - Print Only */}
+          <div className="hidden print:block info-section">
+            <div className="section-title">Introduction</div>
+            <p style={{ fontSize: '9pt', lineHeight: '1.3', margin: '0' }}>
+              This medical report is prepared for {patientInfo?.name || '[Patient Name]'}, following their completion of 
+              the {tool.title} assessment on {currentDate.toLocaleDateString()}. The purpose of this report is to document 
+              the patient's current health status based on their self-reported symptoms and outline the recommended 
+              management plan based on our findings.
+            </p>
           </div>
 
-          {/* Circular Risk Display */}
-          <Card className="mb-8 print:print-card">
-            <CardHeader className="print:pb-2">
-              <CardTitle className="text-xl print:print-card-title">Assessment Results Summary</CardTitle>
+          {/* Medical History - Print Only */}
+          <div className="hidden print:block info-section">
+            <div className="section-title">Medical History & Assessment Details</div>
+            <p style={{ fontSize: '9pt', margin: '0 0 8px 0' }}>
+              Patient completed a comprehensive {tool.difficulty.toLowerCase()} difficulty {tool.category.toLowerCase()} 
+              assessment containing {tool.questions.length} questions with an estimated completion time of {tool.estimatedTime}. 
+              Assessment focuses on {tool.description.toLowerCase()}.
+            </p>
+          </div>
+
+          {/* Presenting Complaints - Print Only */}
+          <div className="hidden print:block info-section">
+            <div className="section-title">Presenting Complaints & Responses</div>
+            {answeredQuestions.map((qa, index) => (
+              <div key={index} className="question-item">
+                <strong>Q{index + 1}:</strong> {qa.question}
+                <br />
+                <strong>Response:</strong> {qa.answer} <span style={{ color: '#666', fontSize: '8pt' }}>(Score: {qa.score})</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Results Display */}
+          <Card className="mb-8 print:hidden">
+            <CardHeader>
+              <CardTitle className="text-xl">Assessment Results Summary</CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center py-8 print:py-4">
-              <div className={`risk-score print:risk-bg-${riskLevel}`}>
+            <CardContent className="flex justify-center py-8">
+              <div className="text-center">
                 <CircularRiskIndicator percentage={percentage} riskLevel={riskLevel} />
-                <div className="mt-6 print:mt-4 text-center">
+                <div className="mt-6 text-center">
                   <div className="text-sm text-muted-foreground mb-2">
                     <strong>Final Score:</strong> {score} out of {maxScore} points ({percentage}%)
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Assessment: {tool.title}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Tool-Specific Recommendations */}
+          {/* Print Results Summary */}
+          <div className="hidden print:block risk-display">
+            <div className="section-title" style={{ margin: '0 0 10px 0', border: 'none' }}>Assessment Results Summary</div>
+            <CircularRiskIndicator percentage={percentage} riskLevel={riskLevel} />
+            <div style={{ marginTop: '10px', fontSize: '10pt' }}>
+              <strong>Final Score:</strong> {score} out of {maxScore} points ({percentage}%)
+            </div>
+          </div>
+
+          {/* Diagnostic Tests - Print Only */}
+          <div className="hidden print:block info-section">
+            <div className="section-title">Diagnostic Tests Conducted</div>
+            <div style={{ fontSize: '9pt' }}>
+              • Comprehensive {tool.category} Symptom Assessment ({tool.questions.length} parameters)
+              <br />
+              • Risk Stratification Analysis (Scoring Algorithm Applied)
+              <br />
+              • Symptom Severity Evaluation (Scale: 0-{tool.questions.reduce((sum, q) => sum + Math.max(...q.options.map(o => o.value)), 0)})
+              <br />
+              • Clinical Decision Support System Analysis
+            </div>
+          </div>
+
+          {/* Treatment Plan & Recommendations */}
           {recommendations && (
-            <Card className="mb-8 print:print-card">
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 print:print-card-title print:risk-${riskLevel}`}>
-                  {riskLevel === 'high' && <AlertCircle className="h-5 w-5" />}
-                  {riskLevel === 'moderate' && <AlertTriangle className="h-5 w-5" />}
-                  {riskLevel === 'low' && <CheckCircle className="h-5 w-5" />}
-                  {recommendations.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-6 print:mb-4">
-                  <h4 className="font-semibold text-foreground mb-3 print:text-sm">
-                    Assessment Summary:
-                  </h4>
-                  <p className="text-foreground leading-relaxed print:text-sm">
+            <>
+              <Card className="mb-8 print:hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {riskLevel === 'high' && <AlertCircle className="h-5 w-5 text-red-600" />}
+                    {riskLevel === 'moderate' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
+                    {riskLevel === 'low' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                    {recommendations.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-foreground leading-relaxed mb-6">
                     {recommendations.advice}
                   </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-foreground mb-4 print:text-sm">
-                    Recommended Actions:
-                  </h4>
-                  <ul className="recommendations-list">
+                  <h4 className="font-semibold text-foreground mb-4">Recommended Actions:</h4>
+                  <ul className="space-y-3">
                     {recommendations.suggestions.map((suggestion, index) => (
-                      <li key={index} className="text-sm text-foreground leading-relaxed print:text-xs">
-                        {suggestion}
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                        <span className="text-sm text-foreground leading-relaxed">{suggestion}</span>
                       </li>
                     ))}
                   </ul>
+                </CardContent>
+              </Card>
+
+              {/* Print Recommendations */}
+              <div className="hidden print:block recommendations-section">
+                <div className="section-title">{recommendations.title}</div>
+                <div style={{ fontSize: '9pt', marginBottom: '8px' }}>
+                  <strong>Assessment Summary:</strong> {recommendations.advice}
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <strong style={{ fontSize: '10pt' }}>Recommended Treatment Plan:</strong>
+                  {recommendations.suggestions.map((suggestion, index) => (
+                    <div key={index} className="recommendation-item">
+                      {suggestion}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
+          {/* Follow-up Plan - Print Only */}
+          <div className="hidden print:block info-section">
+            <div className="section-title">Follow-up Plan & Monitoring</div>
+            <div style={{ fontSize: '9pt' }}>
+              • Patient advised to follow recommended treatment plan as outlined above
+              <br />
+              • Regular monitoring of symptoms and progress assessment recommended
+              <br />
+              • Follow-up consultation scheduled as per physician's recommendation
+              <br />
+              • Patient education provided regarding condition management and prevention
+              <br />
+              • Emergency contact information provided for urgent concerns
+            </div>
+          </div>
+
           {/* Medical Disclaimer */}
-          <Card className="mb-8 print:print-card">
+          <Card className="mb-8 print:hidden">
             <CardHeader>
-              <CardTitle className="text-red-600 flex items-center gap-2 print:print-card-title">
+              <CardTitle className="text-red-600 flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
                 Medical Disclaimer
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="disclaimer">
-                <p className="text-sm leading-relaxed print:text-xs">
-                  <strong>Important Notice:</strong> This health assessment is for informational and educational purposes only. 
-                  It should not be used as a substitute for professional medical advice, diagnosis, or treatment. 
-                  Always consult with a qualified healthcare provider for proper medical evaluation and treatment recommendations. 
-                  If you are experiencing a medical emergency, call your local emergency services immediately (911 in the US).
-                </p>
-                <p className="text-sm leading-relaxed mt-3 print:text-xs print:mt-2">
-                  <strong>Accuracy Disclaimer:</strong> While this assessment is based on established medical guidelines, 
-                  individual results may vary. This tool does not replace clinical judgment or comprehensive medical evaluation 
-                  by healthcare professionals.
-                </p>
+              <div className="text-sm leading-relaxed">
+                <p><strong>Important Notice:</strong> This health assessment is for informational and educational purposes only. 
+                It should not be used as a substitute for professional medical advice, diagnosis, or treatment. 
+                Always consult with a qualified healthcare provider for proper medical evaluation and treatment recommendations.</p>
               </div>
             </CardContent>
           </Card>
+
+          {/* Print Disclaimer */}
+          <div className="hidden print:block disclaimer-box">
+            <strong>Medical Disclaimer:</strong> This assessment is for informational purposes only and should not replace 
+            professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for 
+            proper medical evaluation. If experiencing a medical emergency, call emergency services immediately.
+            <br /><br />
+            <strong>Accuracy Note:</strong> While based on established medical guidelines, individual results may vary. 
+            This tool does not replace clinical judgment or comprehensive medical evaluation by healthcare professionals.
+          </div>
 
           {/* Action Buttons - Hidden in print */}
           <div className="text-center pb-8 no-print">
@@ -542,18 +575,12 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          {/* Professional Print Footer */}
-          <div className="print-footer">
-            <div className="text-center">
-              <div className="font-bold text-blue-600 mb-2">FitScan Health Assessment Platform</div>
-              <div className="mb-2">Professional Health Screening & Diagnostic Tools</div>
-              <div className="mb-2">Report Generated: {currentDate.toLocaleString()}</div>
-              <div className="mb-2">Visit: www.fitscan.life | Contact: hollyman2313@gmail.com</div>
-              <div className="text-xs mt-3 pt-2 border-t border-gray-300">
-                This report was generated using evidence-based health assessment algorithms. 
-                For medical concerns, please consult with qualified healthcare professionals.
-              </div>
-            </div>
+          {/* Professional Footer */}
+          <div className="hidden print:block footer">
+            <div><strong>FitScan Health Assessment Platform</strong></div>
+            <div>Professional Health Screening & Diagnostic Tools</div>
+            <div>Visit: www.fitscan.life | Contact: hollyman2313@gmail.com | Developer: BroxGit</div>
+            <div>Report Generated: {currentDate.toLocaleString()} | This report contains confidential medical information</div>
           </div>
         </div>
       </div>
