@@ -203,33 +203,43 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Professional Print Styles */}
-      <style jsx>{`
+      {/* ENHANCED PRINT STYLES - FORCES WHITE BACKGROUND IN ALL MODES */}
+      <style>{`
         @media print {
-          * {
+          /* Force white background and black text - override all themes */
+          *, *:before, *:after {
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
             -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
           
-          body {
-            margin: 0 !important;
-            padding: 2cm !important;
+          /* Root and body override */
+          html, body {
             background: white !important;
             color: black !important;
+            margin: 0 !important;
+            padding: 2cm !important;
             font-family: "Times New Roman", serif !important;
             font-size: 12pt !important;
             line-height: 1.6 !important;
           }
           
+          /* Hide non-print elements */
           .no-print {
             display: none !important;
           }
           
+          /* Print header styling */
           .print-header {
             display: block !important;
             margin-bottom: 2rem !important;
             padding-bottom: 1rem !important;
             border-bottom: 3px solid #2563eb !important;
+            background: white !important;
           }
           
           .print-title {
@@ -238,12 +248,14 @@ export default function ResultsPage() {
             color: #1e40af !important;
             margin-bottom: 0.5rem !important;
             text-align: center !important;
+            background: white !important;
           }
           
           .print-subtitle {
             font-size: 14pt !important;
             color: #6b7280 !important;
             text-align: center !important;
+            background: white !important;
           }
           
           .print-date {
@@ -251,36 +263,62 @@ export default function ResultsPage() {
             color: #6b7280 !important;
             text-align: right !important;
             margin-top: 1rem !important;
+            background: white !important;
           }
           
-          .card {
-            box-shadow: none !important;
+          /* Card styling */
+          .print-card {
+            background: white !important;
             border: 1px solid #d1d5db !important;
             border-radius: 8px !important;
             margin-bottom: 1.5rem !important;
             padding: 1.5rem !important;
-            background: white !important;
             break-inside: avoid !important;
+            box-shadow: none !important;
           }
           
-          .card-title {
+          .print-card-title {
             font-size: 16pt !important;
             font-weight: bold !important;
             color: #1f2937 !important;
             margin-bottom: 1rem !important;
             padding-bottom: 0.5rem !important;
             border-bottom: 1px solid #e5e7eb !important;
+            background: white !important;
           }
           
+          /* Risk colors - preserve these */
+          .risk-high { color: #dc2626 !important; }
+          .risk-moderate { color: #d97706 !important; }
+          .risk-low { color: #16a34a !important; }
+          
+          /* Risk backgrounds */
+          .risk-bg-high { 
+            background: #fef2f2 !important; 
+            border: 2px solid #dc2626 !important;
+          }
+          .risk-bg-moderate { 
+            background: #fffbeb !important; 
+            border: 2px solid #d97706 !important;
+          }
+          .risk-bg-low { 
+            background: #f0fdf4 !important; 
+            border: 2px solid #16a34a !important;
+          }
+          
+          /* Recommendations list */
           .recommendations-list {
             list-style: none !important;
             padding-left: 0 !important;
+            background: white !important;
           }
           
           .recommendations-list li {
             margin-bottom: 0.75rem !important;
             padding-left: 1.5rem !important;
             position: relative !important;
+            background: white !important;
+            color: black !important;
           }
           
           .recommendations-list li::before {
@@ -291,6 +329,7 @@ export default function ResultsPage() {
             left: 0 !important;
           }
           
+          /* Risk score section */
           .risk-score {
             text-align: center !important;
             padding: 2rem !important;
@@ -299,6 +338,7 @@ export default function ResultsPage() {
             border: 2px solid #e5e7eb !important;
           }
           
+          /* Disclaimer box */
           .disclaimer {
             background: #fef3cd !important;
             border: 1px solid #fbbf24 !important;
@@ -306,8 +346,10 @@ export default function ResultsPage() {
             padding: 1rem !important;
             font-size: 11pt !important;
             line-height: 1.4 !important;
+            color: black !important;
           }
           
+          /* Footer */
           .print-footer {
             display: block !important;
             margin-top: 3rem !important;
@@ -316,23 +358,32 @@ export default function ResultsPage() {
             font-size: 10pt !important;
             color: #6b7280 !important;
             text-align: center !important;
+            background: white !important;
           }
           
-          .page-break {
-            page-break-before: always !important;
+          /* SVG elements */
+          svg circle {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           
+          /* Page setup */
           @page {
             size: A4 !important;
             margin: 2cm !important;
+            background: white !important;
           }
           
-          h1, h2, h3, h4 {
+          /* Headers */
+          h1, h2, h3, h4, h5, h6 {
             color: black !important;
+            background: white !important;
           }
           
-          svg {
-            print-color-adjust: exact !important;
+          /* Specific overrides for common dark theme classes */
+          .dark *, .bg-background, .text-foreground, .bg-card, .text-card-foreground {
+            background: white !important;
+            color: black !important;
           }
         }
       `}</style>
@@ -380,39 +431,35 @@ export default function ResultsPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 print:text-2xl print:mb-4">
               {tool.title} Results
             </h1>
-            <p className="text-muted-foreground print:text-black">{riskDisplay.description}</p>
+            <p className="text-muted-foreground">{riskDisplay.description}</p>
           </div>
 
           {/* Patient Information Card - Print Only */}
-          <Card className="mb-8 hidden print:block">
-            <CardHeader>
-              <CardTitle className="card-title">Assessment Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><strong>Assessment Type:</strong> {tool.title}</div>
-                <div><strong>Category:</strong> {tool.category}</div>
-                <div><strong>Difficulty Level:</strong> {tool.difficulty}</div>
-                <div><strong>Estimated Time:</strong> {tool.estimatedTime}</div>
-                <div><strong>Total Questions:</strong> {tool.questions.length}</div>
-                <div><strong>Assessment Date:</strong> {currentDate.toLocaleDateString()}</div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="hidden print:block print-card">
+            <div className="print-card-title">Assessment Information</div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><strong>Assessment Type:</strong> {tool.title}</div>
+              <div><strong>Category:</strong> {tool.category}</div>
+              <div><strong>Difficulty Level:</strong> {tool.difficulty}</div>
+              <div><strong>Estimated Time:</strong> {tool.estimatedTime}</div>
+              <div><strong>Total Questions:</strong> {tool.questions.length}</div>
+              <div><strong>Assessment Date:</strong> {currentDate.toLocaleDateString()}</div>
+            </div>
+          </div>
 
           {/* Circular Risk Display */}
-          <Card className="mb-8">
+          <Card className="mb-8 print:print-card">
             <CardHeader className="print:pb-2">
-              <CardTitle className="text-xl print:card-title">Assessment Results Summary</CardTitle>
+              <CardTitle className="text-xl print:print-card-title">Assessment Results Summary</CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center py-8 print:py-4">
-              <div className="risk-score">
+              <div className={`risk-score print:risk-bg-${riskLevel}`}>
                 <CircularRiskIndicator percentage={percentage} riskLevel={riskLevel} />
                 <div className="mt-6 print:mt-4 text-center">
-                  <div className="text-sm text-muted-foreground print:text-black mb-2">
+                  <div className="text-sm text-muted-foreground mb-2">
                     <strong>Final Score:</strong> {score} out of {maxScore} points ({percentage}%)
                   </div>
-                  <div className="text-xs text-muted-foreground print:text-gray-600">
+                  <div className="text-xs text-muted-foreground">
                     Assessment: {tool.title}
                   </div>
                 </div>
@@ -422,32 +469,32 @@ export default function ResultsPage() {
 
           {/* Tool-Specific Recommendations */}
           {recommendations && (
-            <Card className="mb-8">
+            <Card className="mb-8 print:print-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 print:card-title">
-                  {riskLevel === 'high' && <AlertCircle className="h-5 w-5 text-red-600" />}
-                  {riskLevel === 'moderate' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
-                  {riskLevel === 'low' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                <CardTitle className={`flex items-center gap-2 print:print-card-title print:risk-${riskLevel}`}>
+                  {riskLevel === 'high' && <AlertCircle className="h-5 w-5" />}
+                  {riskLevel === 'moderate' && <AlertTriangle className="h-5 w-5" />}
+                  {riskLevel === 'low' && <CheckCircle className="h-5 w-5" />}
                   {recommendations.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="mb-6 print:mb-4">
-                  <h4 className="font-semibold text-foreground mb-3 print:text-black print:text-sm">
+                  <h4 className="font-semibold text-foreground mb-3 print:text-sm">
                     Assessment Summary:
                   </h4>
-                  <p className="text-foreground leading-relaxed print:text-black print:text-sm">
+                  <p className="text-foreground leading-relaxed print:text-sm">
                     {recommendations.advice}
                   </p>
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold text-foreground mb-4 print:text-black print:text-sm">
+                  <h4 className="font-semibold text-foreground mb-4 print:text-sm">
                     Recommended Actions:
                   </h4>
                   <ul className="recommendations-list">
                     {recommendations.suggestions.map((suggestion, index) => (
-                      <li key={index} className="text-sm text-foreground leading-relaxed print:text-black print:text-xs">
+                      <li key={index} className="text-sm text-foreground leading-relaxed print:text-xs">
                         {suggestion}
                       </li>
                     ))}
@@ -458,9 +505,9 @@ export default function ResultsPage() {
           )}
 
           {/* Medical Disclaimer */}
-          <Card className="mb-8">
+          <Card className="mb-8 print:print-card">
             <CardHeader>
-              <CardTitle className="text-red-600 flex items-center gap-2 print:card-title print:text-black">
+              <CardTitle className="text-red-600 flex items-center gap-2 print:print-card-title">
                 <AlertTriangle className="h-5 w-5" />
                 Medical Disclaimer
               </CardTitle>
