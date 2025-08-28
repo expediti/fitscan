@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import ToolCard from "@/components/ToolCard";
+import HealthChatbot from "@/components/HealthChatbot";
 import { healthTools, categories } from "@/data/tools";
 
 const Index = () => {
@@ -29,6 +30,17 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
       
+      {/* Compact Header */}
+      <section className="pt-24 pb-8 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Health Assessment Tools
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Choose from our comprehensive collection of symptom checkers and health assessments
+          </p>
+        </div>
+      </section>
 
       {/* Tools Section */}
       <section className="py-8 px-4">
@@ -254,7 +266,7 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">
                 Crafted with <Heart className="h-3 w-3 inline text-red-500 mx-1" /> by{" "}
                 <a 
-                  href="https://www.instagram.com/broxgit?igsh=MXNyMXFzM3VyNXB6eA=="
+                  href="https://www.instagram.com/broxgit?igsh=MXNyMXFzM3VyNXB2eA=="
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-primary hover:text-primary/80 transition-colors"
@@ -267,6 +279,9 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Health Chatbot - Floating Widget */}
+      <HealthChatbot />
     </div>
   );
 };
