@@ -4,8 +4,6 @@ import { Home, Download, RotateCcw, CheckCircle, AlertTriangle, AlertCircle } fr
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
 import Navigation from "@/components/Navigation";
 import { getToolById, HealthTool } from "@/data/tools";
 
@@ -15,8 +13,17 @@ interface LocationState {
   tool: HealthTool;
 }
 
-// Circular Risk Component
+// Custom Circular Progress Component (No Package Needed)
 const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; riskLevel: string }) => {
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedPercentage(percentage);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [percentage]);
+
   const getRiskConfig = (level: string) => {
     const configs = {
       high: { 
@@ -43,22 +50,48 @@ const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; 
 
   const config = getRiskConfig(riskLevel);
   const Icon = config.icon;
+  
+  const radius = 70;
+  const strokeWidth = 8;
+  const normalizedRadius = radius - strokeWidth * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDasharray = `${circumference} ${circumference}`;
+  const strokeDashoffset = circumference - (animatedPercentage / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-6">
       <div className="relative">
-        <div style={{ width: 160, height: 160 }}>
-          <CircularProgressbar
-            value={percentage}
-            strokeWidth={12}
-            styles={buildStyles({
-              pathColor: config.color,
-              trailColor: '#e5e7eb',
-              strokeLinecap: 'round',
-              pathTransitionDuration: 1.5,
-            })}
+        {/* SVG Circular Progress */}
+        <svg
+          height={radius * 2}
+          width={radius * 2}
+          className="transform -rotate-90"
+        >
+          {/* Background Circle */}
+          <circle
+            stroke="#e5e7eb"
+            fill="transparent"
+            strokeWidth={strokeWidth}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
           />
-        </div>
+          {/* Progress Circle */}
+          <circle
+            stroke={config.color}
+            fill="transparent"
+            strokeWidth={strokeWidth}
+            strokeDasharray={strokeDasharray}
+            style={{ 
+              strokeDashoffset,
+              transition: 'stroke-dashoffset 2s ease-in-out'
+            }}
+            strokeLinecap="round"
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+          />
+        </svg>
         
         {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -71,7 +104,7 @@ const CircularRiskIndicator = ({ percentage, riskLevel }: { percentage: number; 
       
       {/* Risk Label */}
       <div 
-        className="px-4 py-2 rounded-full text-sm font-semibold"
+        className="px-6 py-3 rounded-full text-sm font-bold tracking-wide"
         style={{ 
           backgroundColor: config.bgColor, 
           color: config.color,
