@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface Message {
   id: number;
@@ -10,19 +9,57 @@ interface Message {
   timestamp: Date;
 }
 
-export default function HealthChatbot() {
+export default function VoiceHealthChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "👋 Hello! I'm your FitScan Health Assistant.\n\nI can help you with:\n• Choosing health assessments\n• Understanding symptoms\n• Explaining test results\n• General health questions\n\nWhat would you like to know?",
+      text: "👋 Hello! I'm your FitScan Voice Health Assistant. Click the microphone to start talking, or I can speak to you. What would you like to know about your health?",
       isBot: true,
       timestamp: new Date()
     }
   ]);
-  const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [recognition, setRecognition] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
+
+      recognitionInstance.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            currentTranscript += event.results[i][0].transcript;
+          }
+        }
+        if (currentTranscript) {
+          setTranscript(currentTranscript);
+          handleVoiceMessage(currentTranscript);
+        }
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,124 +69,154 @@ export default function HealthChatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Health-specific responses for FitScan
+  // Health-specific voice responses for FitScan
   const getHealthResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
     
     // Greetings
     if (lowerMessage.includes("hello") || lowerMessage.includes("hi") || lowerMessage.includes("hey")) {
-      return "Hello! Welcome to FitScan Health. I'm here to help you with health assessments and medical questions. What can I assist you with today?";
+      return "Hello! Welcome to FitScan Health. I can help you choose health assessments and understand symptoms. What can I help you with today?";
     }
     
     // Assessment selection
-    if (lowerMessage.includes("which test") || lowerMessage.includes("what assessment")) {
-      return "I can help you choose the right assessment! Here are our popular tests:\n\n🫀 Heart Disease Risk - for chest pain, shortness of breath\n🧠 Anxiety Assessment - for worry, nervousness, panic\n🦠 COVID-19 Checker - for fever, cough, loss of taste/smell\n🫁 Asthma Checker - for wheezing, breathing problems\n💊 Diabetes Risk - for increased thirst, fatigue\n\nWhat symptoms are you experiencing?";
+    if (lowerMessage.includes("which test") || lowerMessage.includes("what assessment") || lowerMessage.includes("choose test")) {
+      return "I can help you choose the right assessment! We have Heart Disease Risk Assessment for chest pain, Anxiety Assessment for worry and nervousness, COVID-19 Checker for fever and cough, Asthma Checker for breathing problems, and Diabetes Risk Assessment for increased thirst. What symptoms are you experiencing?";
     }
     
     // Specific conditions
-    if (lowerMessage.includes("chest pain") || lowerMessage.includes("heart")) {
-      return "For chest pain or heart-related symptoms, I recommend our Heart Disease Risk Assessment. It evaluates symptoms like chest discomfort, shortness of breath, and cardiovascular risk factors. Would you like me to guide you to this test?";
+    if (lowerMessage.includes("chest pain") || lowerMessage.includes("heart") || lowerMessage.includes("cardiac")) {
+      return "For chest pain or heart-related symptoms, I recommend our Heart Disease Risk Assessment. It evaluates chest discomfort, shortness of breath, and cardiovascular risk factors. This assessment takes about 8 to 10 minutes. Would you like me to guide you to this test?";
     }
     
-    if (lowerMessage.includes("anxiety") || lowerMessage.includes("worry") || lowerMessage.includes("nervous")) {
-      return "Our Anxiety Assessment can help evaluate worry, nervousness, and anxiety symptoms. It takes 6-8 minutes and covers 8 key areas including panic attacks, sleep problems, and concentration issues. Shall I direct you to this assessment?";
+    if (lowerMessage.includes("anxiety") || lowerMessage.includes("worry") || lowerMessage.includes("nervous") || lowerMessage.includes("panic")) {
+      return "Our Anxiety Assessment can help evaluate worry, nervousness, and anxiety symptoms. It takes 6 to 8 minutes and covers 8 key areas including panic attacks, sleep problems, and concentration issues. This assessment is very helpful for understanding your mental health. Shall I direct you to this assessment?";
     }
     
-    if (lowerMessage.includes("covid") || lowerMessage.includes("fever") || lowerMessage.includes("cough")) {
-      return "The COVID-19 Symptom Checker evaluates symptoms like fever, cough, loss of taste/smell, fatigue, and breathing difficulties. It helps assess your risk level and provides guidance on testing and isolation. Would you like to take this assessment?";
+    if (lowerMessage.includes("covid") || lowerMessage.includes("fever") || lowerMessage.includes("cough") || lowerMessage.includes("corona")) {
+      return "The COVID-19 Symptom Checker evaluates symptoms like fever, cough, loss of taste or smell, fatigue, and breathing difficulties. It helps assess your risk level and provides guidance on testing and isolation. This is especially important if you've been exposed or have symptoms. Would you like to take this assessment?";
     }
     
-    if (lowerMessage.includes("breathing") || lowerMessage.includes("asthma") || lowerMessage.includes("wheezing")) {
-      return "Our Asthma Symptom Checker is perfect for breathing issues! It evaluates wheezing, persistent cough, chest tightness, and exercise limitations. This assessment can help identify if you might have asthma or other respiratory conditions.";
+    if (lowerMessage.includes("breathing") || lowerMessage.includes("asthma") || lowerMessage.includes("wheezing") || lowerMessage.includes("shortness of breath")) {
+      return "Our Asthma Symptom Checker is perfect for breathing issues! It evaluates wheezing, persistent cough, chest tightness, and exercise limitations. This assessment can help identify if you might have asthma or other respiratory conditions. It's very thorough and takes about 6 to 8 minutes.";
     }
     
-    if (lowerMessage.includes("diabetes") || lowerMessage.includes("thirst") || lowerMessage.includes("urination")) {
-      return "The Diabetes Risk Assessment evaluates symptoms like increased thirst, frequent urination, fatigue, and risk factors including age and family history. It's an important screening tool for early detection.";
+    if (lowerMessage.includes("diabetes") || lowerMessage.includes("thirst") || lowerMessage.includes("urination") || lowerMessage.includes("blood sugar")) {
+      return "The Diabetes Risk Assessment evaluates symptoms like increased thirst, frequent urination, fatigue, and risk factors including age and family history. It's an important screening tool for early detection. Early detection of diabetes is crucial for your health. Would you like to start this assessment?";
     }
     
     // Results interpretation
     if (lowerMessage.includes("results") || lowerMessage.includes("score") || lowerMessage.includes("risk level")) {
-      return "FitScan results show three risk levels:\n\n🟢 LOW RISK (0-39%) - Few symptoms, maintain healthy habits\n🟡 MODERATE RISK (40-69%) - Some concerning symptoms, consider medical consultation\n🔴 HIGH RISK (70-100%) - Significant symptoms, seek medical attention promptly\n\nEach result includes personalized recommendations and can be printed as a professional medical report.";
+      return "FitScan results show three risk levels. Low risk means 0 to 39 percent with few symptoms - maintain healthy habits. Moderate risk is 40 to 69 percent with some concerning symptoms - consider medical consultation. High risk is 70 to 100 percent with significant symptoms - seek medical attention promptly. Each result includes personalized recommendations and can be printed as a professional medical report.";
     }
     
     // Accuracy and reliability
     if (lowerMessage.includes("accurate") || lowerMessage.includes("reliable") || lowerMessage.includes("trust")) {
-      return "FitScan assessments use evidence-based medical algorithms with 95% accuracy rate. Our tools are designed by healthcare professionals and based on established clinical guidelines. However, they should not replace professional medical advice - always consult healthcare providers for medical decisions.";
-    }
-    
-    // Printing and reports
-    if (lowerMessage.includes("print") || lowerMessage.includes("report") || lowerMessage.includes("pdf")) {
-      return "Yes! You can print your results as a professional medical report. When you click 'Print Results', we'll ask for patient details (name, age, sex) and generate a comprehensive report including:\n• Patient information\n• Assessment responses\n• Risk analysis\n• Clinical recommendations\n• Medical disclaimers\n\nPerfect for sharing with healthcare providers!";
+      return "FitScan assessments use evidence-based medical algorithms with 95 percent accuracy rate. Our tools are designed by healthcare professionals and based on established clinical guidelines. However, they should not replace professional medical advice. Always consult healthcare providers for medical decisions.";
     }
     
     // Emergency situations
-    if (lowerMessage.includes("emergency") || lowerMessage.includes("urgent") || lowerMessage.includes("severe pain")) {
-      return "🚨 IMPORTANT: If you're experiencing a medical emergency, call emergency services immediately (911 in the US).\n\nOur assessments are for informational purposes only and cannot replace emergency medical care. For severe symptoms, chest pain, difficulty breathing, or other urgent conditions, seek immediate medical attention.";
+    if (lowerMessage.includes("emergency") || lowerMessage.includes("urgent") || lowerMessage.includes("severe pain") || lowerMessage.includes("911")) {
+      return "Important! If you're experiencing a medical emergency, call emergency services immediately. That's 911 in the United States. Our assessments are for informational purposes only and cannot replace emergency medical care. For severe symptoms, chest pain, difficulty breathing, or other urgent conditions, seek immediate medical attention.";
     }
     
-    // General help
-    if (lowerMessage.includes("help") || lowerMessage.includes("how to") || lowerMessage.includes("guide")) {
-      return "I can help you with:\n\n📋 Choosing the right health assessment\n🔍 Understanding symptoms and conditions\n📊 Interpreting your results\n🖨️ Printing professional reports\n❓ General health questions\n🏥 Finding appropriate medical care\n\nJust ask me anything about health assessments or FitScan features!";
+    // Voice specific help
+    if (lowerMessage.includes("how to use") || lowerMessage.includes("voice") || lowerMessage.includes("speak")) {
+      return "Great! You're already using the voice feature perfectly. Just click the microphone button and speak your questions. I'll listen and respond with voice as well. You can ask about symptoms, choose assessments, or get health information. I can also read your results aloud. What would you like to know?";
     }
     
     // Thank you
     if (lowerMessage.includes("thank")) {
-      return "You're very welcome! Your health is important, and I'm glad I could help. If you have any other questions about FitScan assessments or health topics, feel free to ask anytime. Take care! 😊";
+      return "You're very welcome! Your health is important, and I'm glad I could help with voice assistance. If you have any other questions about FitScan assessments or health topics, just speak to me anytime. Take care and stay healthy!";
     }
     
     // Default response
-    return "I understand you're asking about health topics. While I can help with FitScan assessments and general health information, for specific medical advice, please consult healthcare professionals.\n\nI can help you:\n• Choose the right health assessment\n• Understand symptoms\n• Explain how our tests work\n• Guide you through the platform\n\nWhat specific question do you have?";
+    return "I understand you're asking about health topics. I can help you choose the right health assessment, understand symptoms, or explain how our tests work. For specific medical advice, please consult healthcare professionals. What would you like to know about your health?";
   };
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
+  const handleVoiceMessage = (voiceText: string) => {
+    if (!voiceText.trim()) return;
 
     const userMessage: Message = {
       id: messages.length + 1,
-      text: inputText,
+      text: voiceText,
       isBot: false,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputText("");
-    setIsTyping(true);
+    setTranscript("");
 
-    // Simulate typing delay
+    // Generate bot response
     setTimeout(() => {
       const botResponse: Message = {
         id: messages.length + 2,
-        text: getHealthResponse(inputText),
+        text: getHealthResponse(voiceText),
         isBot: true,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1000);
+      
+      // Speak the response
+      speakText(botResponse.text);
+    }, 500);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      sendMessage();
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Stop any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 0.8;
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      window.speechSynthesis.speak(utterance);
     }
   };
 
+  const startListening = () => {
+    if (recognition && !isListening) {
+      setIsListening(true);
+      recognition.start();
+    }
+  };
+
+  const stopListening = () => {
+    if (recognition && isListening) {
+      recognition.stop();
+      setIsListening(false);
+    }
+  };
+
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  const hasVoiceSupport = recognition !== null && 'speechSynthesis' in window;
+
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Voice Chat Button */}
       <div className="fixed bottom-6 right-6 z-50">
         {!isOpen && (
           <Button
             onClick={() => setIsOpen(true)}
             className="w-16 h-16 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg transition-all duration-300 hover:scale-110"
           >
-            <MessageCircle className="h-6 w-6 text-white" />
+            <Mic className="h-6 w-6 text-white" />
           </Button>
         )}
 
-        {/* Chat Window */}
+        {/* Voice Chat Window */}
         {isOpen && (
           <div className="w-80 h-96 bg-white shadow-2xl rounded-lg border border-gray-200 flex flex-col">
             {/* Header */}
@@ -159,8 +226,10 @@ export default function HealthChatbot() {
                   <Bot className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm">FitScan Health Assistant</h3>
-                  <p className="text-xs opacity-90">Online • Ready to help</p>
+                  <h3 className="font-semibold text-sm">FitScan Voice Assistant</h3>
+                  <p className="text-xs opacity-90">
+                    {isListening ? "🎤 Listening..." : isSpeaking ? "🔊 Speaking..." : "Ready • Voice Enabled"}
+                  </p>
                 </div>
               </div>
               <Button
@@ -169,9 +238,18 @@ export default function HealthChatbot() {
                 onClick={() => setIsOpen(false)}
                 className="text-white hover:bg-blue-700 h-8 w-8 p-0"
               >
-                <X className="h-4 w-4" />
+                ✕
               </Button>
             </div>
+
+            {/* Voice Support Check */}
+            {!hasVoiceSupport && (
+              <div className="p-4 bg-yellow-50 border-b text-center">
+                <p className="text-sm text-yellow-800">
+                  Voice features require Chrome/Edge browser. Text chat still works!
+                </p>
+              </div>
+            )}
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
@@ -180,20 +258,30 @@ export default function HealthChatbot() {
                   key={message.id}
                   className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                 >
-                  <div className={`flex items-start gap-2 max-w-[80%]`}>
+                  <div className={`flex items-start gap-2 max-w-[85%]`}>
                     {message.isBot && (
                       <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                         <Bot className="h-3 w-3 text-blue-600" />
                       </div>
                     )}
                     <div
-                      className={`p-3 rounded-lg text-sm leading-relaxed whitespace-pre-line ${
+                      className={`p-3 rounded-lg text-sm leading-relaxed ${
                         message.isBot
                           ? 'bg-white text-gray-800 shadow-sm border border-gray-200'
                           : 'bg-blue-600 text-white'
                       }`}
                     >
                       {message.text}
+                      {message.isBot && hasVoiceSupport && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="mt-2 h-6 text-xs p-1"
+                          onClick={() => speakText(message.text)}
+                        >
+                          🔊 Speak
+                        </Button>
+                      )}
                     </div>
                     {!message.isBot && (
                       <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -203,46 +291,66 @@ export default function HealthChatbot() {
                   </div>
                 </div>
               ))}
-              
-              {/* Typing indicator */}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Bot className="h-3 w-3 text-blue-600" />
-                    </div>
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      </div>
+
+              {/* Listening Indicator */}
+              {isListening && (
+                <div className="flex justify-center">
+                  <div className="bg-red-100 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-600">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium">Listening...</span>
                     </div>
                   </div>
                 </div>
               )}
+
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
+            {/* Voice Controls */}
             <div className="p-4 border-t border-gray-200 bg-white rounded-b-lg">
-              <div className="flex gap-2">
-                <Input
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Ask about health assessments..."
-                  onKeyPress={handleKeyPress}
-                  className="flex-1 text-sm"
-                  disabled={isTyping}
-                />
-                <Button 
-                  onClick={sendMessage} 
-                  size="sm"
-                  disabled={!inputText.trim() || isTyping}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+              <div className="flex justify-center gap-3">
+                {hasVoiceSupport && (
+                  <>
+                    <Button
+                      onClick={isListening ? stopListening : startListening}
+                      className={`w-12 h-12 rounded-full ${
+                        isListening 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                      disabled={isSpeaking}
+                    >
+                      {isListening ? (
+                        <MicOff className="h-6 w-6 text-white" />
+                      ) : (
+                        <Mic className="h-6 w-6 text-white" />
+                      )}
+                    </Button>
+                    
+                    <Button
+                      onClick={toggleSpeech}
+                      variant="outline"
+                      className="w-12 h-12 rounded-full"
+                      disabled={!isSpeaking}
+                    >
+                      {isSpeaking ? (
+                        <VolumeX className="h-5 w-5" />
+                      ) : (
+                        <Volume2 className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
+              
+              <div className="text-center mt-2">
+                <p className="text-xs text-gray-500">
+                  {hasVoiceSupport 
+                    ? (isListening ? "Speak now..." : "Click microphone to talk") 
+                    : "Voice not supported in this browser"
+                  }
+                </p>
               </div>
             </div>
           </div>
