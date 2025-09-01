@@ -280,8 +280,8 @@ const Index = () => {
         </div>
       </footer>
 
-      {/* Health Chatbot - Floating Widget */}
-      <HealthChatbot />
+      {/*voice Health Chatbot - Floating Widget */}
+     <VoiceHealthChatbot />
     </div>
   );
 };
