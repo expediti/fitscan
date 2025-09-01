@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import ToolCard from "@/components/ToolCard";
-import HealthChatbot from "@/components/HealthChatbot";
+import VoiceHealthChatbot from "@/components/HealthChatbot";
 import { healthTools, categories } from "@/data/tools";
 
 const Index = () => {
